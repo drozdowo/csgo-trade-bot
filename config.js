@@ -1,6 +1,6 @@
 const config = {
   port: 3000,
-  debug: false
+  debug: true
 };
 
 export default config;
