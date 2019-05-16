@@ -1,5 +1,6 @@
 import SteamUser from "steam-user";
 import steamtotp from "steam-totp";
+import getSteamAPIKey from "steam-web-api-key";
 import SteamTradeOffers from "steam-tradeoffers";
 import _ from "lodash";
 import config from "../config";
@@ -12,7 +13,8 @@ export default class Bot {
   webApiKey = null;
   tradeOffers = null;
   webLogOn = null;
-  cookies = null;
+  webAuth = null;
+  isReady = false;
 
   constructor(details) {
     this.details = details;
@@ -32,19 +34,22 @@ export default class Bot {
   };
 
   setEventHandlers = user => {
-    this.steamUser.on("steamGuard", (domain, callback, lastCodeWrong) => {
-      if (lastCodeWrong) {
-        this.steamUser.logOff();
-      }
-      console.log(
-        "Obtaining SteamGuard code for ",
-        this.details.accountName,
-        "..."
-      );
-      var code = steamtotp.generateAuthCode(this.details.sharedSecret);
-      console.log("Code obtained: ", code);
-      callback(code);
-    });
+    if (this.details.sharedSecret != undefined) {
+      //If we have a shared secret, we'll handle it here. Otherwise, we'll take input from stdin
+      this.steamUser.on("steamGuard", (domain, callback, lastCodeWrong) => {
+        if (lastCodeWrong) {
+          this.steamUser.logOff();
+        }
+        console.log(
+          "Obtaining SteamGuard code for ",
+          this.details.accountName,
+          "..."
+        );
+        var code = steamtotp.generateAuthCode(this.details.sharedSecret);
+        console.log("Code obtained: ", code);
+        callback(code);
+      });
+    }
 
     this.steamUser.on("error", err => {
       console.log("ERROR logging into ", this.details.accountName, ": ", err);
@@ -63,22 +68,36 @@ export default class Bot {
       }
     });
 
-    this.steamUser.on("tradeResponse", (steamID, response, restrictions) =>
-      this.onTradeRequest(steamID, response, restrictions)
-    );
+    this.steamUser.on("tradeResponse", (steamID, response, restrictions) => {
+      this.onTradeRequest(steamID, response, restrictions);
+    });
 
     this.steamUser.on("webSession", (sessionId, cookies) => {
-      this.cookies = {
+      this.webAuth = {
+        apiKey: null,
         sessionId,
         cookies
       };
-      console.log(this.cookies);
+      getSteamAPIKey(
+        { sessionId: this.webAuth.sessionId, webCookie: this.webAuth.cookies },
+        (one, two) => {
+          if (one != null) {
+            console.log(
+              `Error obtaining WebAPIKey for user: ${this.details.accountName}`
+            );
+            this.steamUser.logOff();
+            return;
+          }
+          this.webApiKey = two;
+          this.isReady = true;
+          console.log(`${this.details.accountName} set up and ready to go!`);
+        }
+      );
     });
   };
 
   onTradeRequest = (steamID, response, restrictions) => {
-    logDebug("DEBUG: Trade Request Received from : " + steamID);
-    console.log(restrictions);
+    console.log(`trade from `, steamID, response, restrictions);
   };
 
   getMyInventory = async () => {
