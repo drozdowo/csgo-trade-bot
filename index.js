@@ -28,7 +28,7 @@ app.listen(config.port, async () => {
 app.get("/bots/getAllItems", async (req, res) => {
   let resJson = {};
   botArr.map(async bot => {
-    resJson[bot.myDetails.accountName] = await bot.getMyInventory();
+    resJson[bot.details.accountName] = await bot.getMyInventory();
   });
   res.send(resJson);
 });

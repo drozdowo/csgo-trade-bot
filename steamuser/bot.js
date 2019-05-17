@@ -72,24 +72,32 @@ export default class Bot {
       this.onTradeRequest(steamID, response, restrictions);
     });
 
-    this.steamUser.on("webSession", (sessionId, cookies) => {
+    this.steamUser.on("webSession", (sessionID, webCookie) => {
       this.webAuth = {
-        apiKey: null,
-        sessionId,
-        cookies
+        APIKey: null,
+        sessionID,
+        webCookie
       };
       getSteamAPIKey(
-        { sessionId: this.webAuth.sessionId, webCookie: this.webAuth.cookies },
+        {
+          sessionId: this.webAuth.sessionID,
+          webCookie: this.webAuth.webCookie
+        },
         (one, two) => {
           if (one != null) {
             console.log(
-              `Error obtaining WebAPIKey for user: ${this.details.accountName}`
+              `Error obtaining WebAPIKey for user: ${this.details.accountName}`,
+              one
             );
             this.steamUser.logOff();
             return;
           }
-          this.webApiKey = two;
+          this.webAuth.APIKey = two;
           this.isReady = true;
+          // Set up the tradeoffers
+          this.tradeOffers = new SteamTradeOffers();
+          console.log("webauth: ", this.webAuth);
+          this.tradeOffers.setup(this.webAuth);
           console.log(`${this.details.accountName} set up and ready to go!`);
         }
       );
@@ -101,10 +109,17 @@ export default class Bot {
   };
 
   getMyInventory = async () => {
-    const mySteamId = this.steamUser.client_supplied_steamid;
-    const res = await axios.get(
-      `http://steamcommunity.com/profiles/${mySteamId}/inventory/json/730/1`
+    const myInv = await this.tradeOffers.loadMyInventory(
+      {
+        appId: 730,
+        contextId: 2,
+        tradeableOnly: true
+      },
+      (err, inv) => {
+        if (err) throw new Error(err);
+        return inv;
+      }
     );
-    return res;
+    return myInv;
   };
 }
