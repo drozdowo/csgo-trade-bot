@@ -12,7 +12,6 @@ export default class Bot {
   details = null;
   webApiKey = null;
   tradeOffers = null;
-  webLogOn = null;
   webAuth = null;
   isReady = false;
 
@@ -73,6 +72,9 @@ export default class Bot {
     });
 
     this.steamUser.on("webSession", (sessionID, webCookie) => {
+      if (this.webAuth != null) {
+        return;
+      }
       this.webAuth = {
         APIKey: null,
         sessionID,
@@ -109,17 +111,18 @@ export default class Bot {
   };
 
   getMyInventory = async () => {
-    const myInv = await this.tradeOffers.loadMyInventory(
-      {
-        appId: 730,
-        contextId: 2,
-        tradeableOnly: true
-      },
-      (err, inv) => {
-        if (err) throw new Error(err);
-        return inv;
-      }
-    );
-    return myInv;
+    return new Promise((resolve, reject) => {
+      this.tradeOffers.loadMyInventory(
+        {
+          appId: 730,
+          contextId: 2,
+          tradeableOnly: true
+        },
+        (err, inv) => {
+          if (err) throw new reject(err);
+          resolve(inv);
+        }
+      );
+    });
   };
 }

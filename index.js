@@ -2,11 +2,11 @@ import express from "express";
 import config from "./config";
 import accounts from "./steamuser/accounts";
 import Bot from "./steamuser/bot";
+import BotRouter from "./routers/bot/botRouter";
+import BotManager from "./BotManager";
 const app = express();
 
 global._mckay_statistics_opt_out = 1;
-
-let botArr = [];
 
 app.listen(config.port, async () => {
   console.log("/============\\");
@@ -21,14 +21,8 @@ app.listen(config.port, async () => {
   accounts.map(a => {
     let bot = new Bot(a);
     bot.logIntoBot();
-    botArr.push(bot);
+    BotManager().addBot(bot);
   });
 });
 
-app.get("/bots/getAllItems", async (req, res) => {
-  let resJson = {};
-  botArr.map(async bot => {
-    resJson[bot.details.accountName] = await bot.getMyInventory();
-  });
-  res.send(resJson);
-});
+app.use("/bots", BotRouter);
