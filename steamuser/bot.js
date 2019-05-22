@@ -2,6 +2,7 @@ import SteamUser from "steam-user";
 import steamtotp from "steam-totp";
 import getSteamAPIKey from "steam-web-api-key";
 import SteamTradeOffers from "steam-tradeoffers";
+import SteamCommunity from "SteamCommunity";
 import _ from "lodash";
 import config from "../config";
 import axios from "axios";
@@ -12,11 +13,15 @@ export default class Bot {
   details = null;
   webApiKey = null;
   tradeOffers = null;
+  steamCommunity = null;
   webAuth = null;
-  isReady = false;
+  isReady = null;
+  acceptIds = null;
 
   constructor(details) {
     this.details = details;
+    this.isReady = false;
+    this.acceptIds = [];
   }
 
   logIntoBot = () => {
@@ -71,10 +76,15 @@ export default class Bot {
       this.onTradeRequest(steamID, response, restrictions);
     });
 
+    // We have logged into the web, so now we'll set our cookies.
     this.steamUser.on("webSession", (sessionID, webCookie) => {
       if (this.webAuth != null) {
         return;
       }
+      if (this.steamCommunity == null) {
+        this.steamCommunity = new SteamCommunity();
+      }
+      this.steamCommunity.setCookies(webCookie);
       this.webAuth = {
         APIKey: null,
         sessionID,
@@ -104,6 +114,23 @@ export default class Bot {
         }
       );
     });
+
+    // Set up our new confirmation handler:
+    this.steamCommunity.on("newConfirmation", confirmation => {
+      // 'confirmation' is our CConfirmation Object https://github.com/DoctorMcKay/node-steamcommunity/wiki/CConfirmation
+      if (this.details.sharedSecret != null) {
+        var time = steamtotp.time();
+        var code = steamtotp.getConfirmationKey(
+          this.details.sharedSecret,
+          time,
+          "details"
+        );
+        confirmation.getOfferID(time, code, (err, offerId) => {
+          if (err) throw new Error(err);
+          this.processTradeOffer(confirmation, offerId);
+        });
+      }
+    });
   };
 
   onTradeRequest = (steamID, response, restrictions) => {
@@ -119,10 +146,43 @@ export default class Bot {
           tradeableOnly: true
         },
         (err, inv) => {
-          if (err) throw new reject(err);
+          if (err) throw reject(err);
           resolve(inv);
         }
       );
     });
+  };
+
+  makeTradeOffer = offer => {
+    return new Promise((resolve, reject) => {
+      this.tradeOffers.makeOffer(offer, (err, offerId) => {
+        if (err) reject(err, offer);
+        this.acceptIds.push(offerId);
+        resolve(offerId);
+      });
+    });
+  };
+
+  // confirmation - CConfirm - https://github.com/DoctorMcKay/node-steamcommunity/wiki/CConfirmation
+  // id - The trade offer ID
+  processTradeOffer = (confirmation, id) => {
+    if (this.acceptIds.indexOf(id) != -1) {
+      // Then we should accept this offer, as we made it.
+      var time = steamtotp.time();
+      var code = steamtotp.getConfirmationKey(
+        this.details.sharedSecret,
+        time,
+        "allow"
+      );
+      confirmation.respond(time, key, true, err => {
+        if (err) throw new Error(err);
+      });
+      console.log(
+        "[Info] BOT: " +
+          this.details.accountName +
+          " Has accepted trade offer: ",
+        id
+      );
+    }
   };
 }

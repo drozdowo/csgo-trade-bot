@@ -4,7 +4,11 @@ import accounts from "./steamuser/accounts";
 import Bot from "./steamuser/bot";
 import BotRouter from "./routers/bot/botRouter";
 import BotManager from "./BotManager";
+import bodyParser from "body-parser";
+
 const app = express();
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 global._mckay_statistics_opt_out = 1;
 

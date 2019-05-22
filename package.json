@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "body-parser": "^1.19.0",
     "express": "^4.16.4",
     "lodash": "^4.17.11",
     "steam-client": "^2.5.8",
@@ -31,6 +32,7 @@
     "steam-tradeoffers": "^3.1.1",
     "steam-user": "^4.8.0",
     "steam-web-api-key": "^0.0.3",
-    "steam-weblogon": "^0.0.5"
+    "steam-weblogon": "^0.0.5",
+    "steamcommunity": "^3.40.0"
   }
 }
