@@ -3,6 +3,7 @@ import steamtotp from "steam-totp";
 import getSteamAPIKey from "steam-web-api-key";
 import SteamTradeOffers from "steam-tradeoffers";
 import SteamCommunity from "SteamCommunity";
+import TradeOfferManager from "steam-tradeoffer-manager";
 import _ from "lodash";
 import config from "../config";
 import axios from "axios";
@@ -14,6 +15,7 @@ export default class Bot {
   webApiKey = null;
   tradeOffers = null;
   steamCommunity = null;
+  loggedIn = false;
   webAuth = null;
   isReady = null;
   acceptIds = null;
@@ -61,7 +63,9 @@ export default class Bot {
     });
 
     this.steamUser.on("loggedOn", details => {
+      if (this.loggedIn) return;
       console.log("Successful client login! ");
+      this.loggedIn = true;
       this.steamUser.webLogOn();
       this.steamUser.setPersona(5); //Set us as looking to trade
     });
@@ -107,29 +111,16 @@ export default class Bot {
           this.webAuth.APIKey = two;
           this.isReady = true;
           // Set up the tradeoffers
-          this.tradeOffers = new SteamTradeOffers();
-          console.log("webauth: ", this.webAuth);
-          this.tradeOffers.setup(this.webAuth);
+          this.tradeOffers = new TradeOfferManager({
+            steam: this.steamUser,
+            domain: "www.csgoduels.com",
+            language: "en"
+          });
+          this.tradeOffers.setCookies(webCookie);
           console.log(`${this.details.accountName} set up and ready to go!`);
+          this.tradeOffers.on("newOffer", this.handleOffers);
         }
       );
-    });
-
-    // Set up our new confirmation handler:
-    this.steamCommunity.on("newConfirmation", confirmation => {
-      // 'confirmation' is our CConfirmation Object https://github.com/DoctorMcKay/node-steamcommunity/wiki/CConfirmation
-      if (this.details.sharedSecret != null) {
-        var time = steamtotp.time();
-        var code = steamtotp.getConfirmationKey(
-          this.details.sharedSecret,
-          time,
-          "details"
-        );
-        confirmation.getOfferID(time, code, (err, offerId) => {
-          if (err) throw new Error(err);
-          this.processTradeOffer(confirmation, offerId);
-        });
-      }
     });
   };
 
@@ -143,46 +134,63 @@ export default class Bot {
         {
           appId: 730,
           contextId: 2,
-          tradeableOnly: true
+          tradableOnly: false
         },
         (err, inv) => {
-          if (err) throw reject(err);
+          if (err) reject(err);
           resolve(inv);
         }
       );
     });
   };
 
-  makeTradeOffer = offer => {
+  getOtherInventory = async steamId => {
     return new Promise((resolve, reject) => {
-      this.tradeOffers.makeOffer(offer, (err, offerId) => {
-        if (err) reject(err, offer);
-        this.acceptIds.push(offerId);
-        resolve(offerId);
-      });
+      this.tradeOffers.loadPartnerInventory(
+        {
+          partnerSteamId: steamId,
+          appId: 730,
+          contextId: 2
+        },
+        (err, res) => {
+          if (err) reject(err);
+          resolve(res);
+        }
+      );
+    }).catch(err => {
+      console.log(`Error retrieving CSGO Inventory for: ${steamId} ${err}`);
+      return null;
     });
   };
 
-  // confirmation - CConfirm - https://github.com/DoctorMcKay/node-steamcommunity/wiki/CConfirmation
-  // id - The trade offer ID
-  processTradeOffer = (confirmation, id) => {
-    if (this.acceptIds.indexOf(id) != -1) {
-      // Then we should accept this offer, as we made it.
-      var time = steamtotp.time();
-      var code = steamtotp.getConfirmationKey(
-        this.details.sharedSecret,
-        time,
-        "allow"
-      );
-      confirmation.respond(time, key, true, err => {
-        if (err) throw new Error(err);
+  makeTradeOffer = offer => {
+    return new Promise((resolve, reject) => {
+      this.tradeOffers.makeOffer(offer, (err, offerId) => {
+        if (err) reject(err);
+        this.acceptIds.push(offerId);
+        resolve(offerId);
       });
-      console.log(
-        "[Info] BOT: " +
-          this.details.accountName +
-          " Has accepted trade offer: ",
-        id
-      );
+    }).catch(err => {
+      console.log(`Error making trade offer! ${err}`);
+    });
+  };
+
+  // Check our offers, accept any donations and reject any offers that request any items from our inventory.
+  // Run this on a poll, every 10 seconds we'll check. If this hampers performance at scale, increase the interval.
+  handleOffers = async offer => {
+    console.log(`[INFO] Bot ${this.details.accountName} got offer...`);
+    if (offer.isGlitched()) {
+      offer.decline();
     }
+    if (offer.itemsToGive.length === 0) {
+      console.log(
+        `[INFO] Bot ${this.details.accountName} accepting donation from ${
+          offer.partner.steamID
+        }`
+      );
+      offer.accept();
+    }
+    console.log(`[INFO] Bot ${this.details.accountName} declining offer...`);
+    offer.decline();
   };
 }

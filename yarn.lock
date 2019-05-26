@@ -703,7 +703,7 @@
   resolved "https://registry.yarnpkg.com/@doctormckay/stats-reporter/-/stats-reporter-1.0.4.tgz#daa1e42f0e728c6fb5b9fb9e148f1610677c7740"
   integrity sha512-J8YqHQGZ3OdrT4xzWOzvA/p3vnXNnSOsAybPa5+02YE5U46JbZexfzU8nJV+2iN7GWhGvLAQNgdvFHl5WKB4iw==
 
-"@doctormckay/stdlib@^1.6.0", "@doctormckay/stdlib@^1.8.0":
+"@doctormckay/stdlib@^1.5.1", "@doctormckay/stdlib@^1.6.0", "@doctormckay/stdlib@^1.8.0":
   version "1.10.0"
   resolved "https://registry.yarnpkg.com/@doctormckay/stdlib/-/stdlib-1.10.0.tgz#a0f1e7174eb85197342556a199599a15ff37f69d"
   integrity sha512-Sb1kpMGG/uKUg4oxDjUgFKJELncsEn9FESjeD6gx/mtCZsaxs5xN5KjjwCSmhR+aTLCTO+i+Vv8WZ5hGe6aqKQ==
@@ -931,7 +931,7 @@ async@^1.4.2:
   resolved "https://registry.yarnpkg.com/async/-/async-1.5.2.tgz#ec6a61ae56480c0c3cb241c95618e20892f9672a"
   integrity sha1-7GphrlZIDAw8skHJVhjiCJL5Zyo=
 
-async@^2.1.4, async@^2.5.0:
+async@^2.1.4, async@^2.5.0, async@^2.6.0:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/async/-/async-2.6.2.tgz#18330ea7e6e313887f5d2f2a904bac6fe4dd5381"
   integrity sha512-H1qVYh1MYhEEFLsP97cVKqCGo7KfCyTt6uEWqsTBr9SO84oK9Uwbyd/yCW+6rKJLHksBNUVWZDAjfS+Ccx0Bbg==
@@ -1502,6 +1502,11 @@ decode-uri-component@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.0.tgz#eb3913333458775cb84cd1a1fae062106bb87545"
   integrity sha1-6zkTMzRYd1y4TNGh+uBiEGu4dUU=
+
+deep-equal@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/deep-equal/-/deep-equal-1.0.1.tgz#f5d260292b660e084eff4cdbc9f08ad3247448b5"
+  integrity sha1-9dJgKStmDghO/0zbyfCK0yR0SLU=
 
 deep-extend@^0.6.0:
   version "0.6.0"
@@ -2591,6 +2596,11 @@ kind-of@^6.0.0, kind-of@^6.0.2:
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.2.tgz#01146b36a6218e64e58f3a8d66de5d7fc6f6d051"
   integrity sha512-s5kLOcnH0XqDO+FvuaLX8DDjZ18CGFk7VygH40QoKPUQhW4e2rvM0rwUq0t8IQDOwYSeLK01U90OjzBTme2QqA==
+
+languages@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/languages/-/languages-0.1.3.tgz#f19273bb0e946acd2deb10c07c750ee128bdd4b0"
+  integrity sha1-8ZJzuw6Uas0t6xDAfHUO4Si91LA=
 
 latest-version@^3.0.0:
   version "3.1.0"
@@ -3842,6 +3852,21 @@ steam-totp@^2.0.1, steam-totp@^2.1.0:
   dependencies:
     "@doctormckay/stats-reporter" "^1.0.0"
 
+steam-tradeoffer-manager@^2.9.5:
+  version "2.9.5"
+  resolved "https://registry.yarnpkg.com/steam-tradeoffer-manager/-/steam-tradeoffer-manager-2.9.5.tgz#2423c18382047cde3e9c637c20977592b2b9a729"
+  integrity sha512-pYumTcn4b3b+Cvv5Pd7dSeW0xfR3V108GAYGEEmwEKs/pyjaaamwzvc3UqqsLfRcO44lJuTZ/kIFq93mP+AHmw==
+  dependencies:
+    "@doctormckay/stats-reporter" "^1.0.3"
+    "@doctormckay/stdlib" "^1.5.1"
+    appdirectory "^0.1.0"
+    async "^2.6.0"
+    deep-equal "^1.0.1"
+    file-manager "^1.0.1"
+    languages "^0.1.3"
+    steamcommunity "^3.33.1"
+    steamid "^1.1.0"
+
 steam-tradeoffers@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/steam-tradeoffers/-/steam-tradeoffers-3.1.1.tgz#4c06fc1ff17f7d48705cdb9f7ac88f376358f0bf"
@@ -3894,7 +3919,7 @@ steam-weblogon@^0.0.5:
     steam-crypto "0.0.1"
     steam-web-api "0.0.1"
 
-steamcommunity@^3.40.0:
+steamcommunity@^3.33.1, steamcommunity@^3.40.0:
   version "3.40.0"
   resolved "https://registry.yarnpkg.com/steamcommunity/-/steamcommunity-3.40.0.tgz#dfd8e021ff767339b61cdba8f84e0d569bfe7b9c"
   integrity sha512-yGldkAqLqAlvz5inhdeQTBG3by1kY4PqYmiT8sPhD2TojSY6XmUH26L4Hb2LC3xzHR6pWPn7H6jplFimm2MxHg==
