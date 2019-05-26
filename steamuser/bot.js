@@ -119,6 +119,7 @@ export default class Bot {
           this.tradeOffers.setCookies(webCookie);
           console.log(`${this.details.accountName} set up and ready to go!`);
           this.tradeOffers.on("newOffer", this.handleOffers);
+          this.tradeOffers.on("sentOfferChanged", this.offerChange);
         }
       );
     });
@@ -146,15 +147,14 @@ export default class Bot {
 
   getOtherInventory = async steamId => {
     return new Promise((resolve, reject) => {
-      this.tradeOffers.loadPartnerInventory(
-        {
-          partnerSteamId: steamId,
-          appId: 730,
-          contextId: 2
-        },
-        (err, res) => {
+      this.tradeOffers.getUserInventoryContents(
+        steamId,
+        730,
+        2,
+        1,
+        (err, inv, currencies) => {
           if (err) reject(err);
-          resolve(res);
+          resolve(inv);
         }
       );
     }).catch(err => {
@@ -165,19 +165,36 @@ export default class Bot {
 
   makeTradeOffer = offer => {
     return new Promise((resolve, reject) => {
-      this.tradeOffers.makeOffer(offer, (err, offerId) => {
+      let tradeOffer = null;
+      if (offer.token != null) {
+        tradeOffer = this.tradeOffers.createOffer(
+          offer.partnerSteamId,
+          offer.token
+        );
+      } else {
+        tradeOffer = this.tradeOffers.createOffer(offer.partnerSteamId);
+      }
+      tradeOffer.addMyItems(offer.itemsFromMe);
+      tradeOffer.addTheirItems(offer.itemsFromThem);
+      tradeOffer.setMessage(offer.message);
+      tradeOffer.send((err, status) => {
         if (err) reject(err);
-        this.acceptIds.push(offerId);
-        resolve(offerId);
+        resolve(status);
       });
     }).catch(err => {
       console.log(`Error making trade offer! ${err}`);
     });
   };
 
-  // Check our offers, accept any donations and reject any offers that request any items from our inventory.
-  // Run this on a poll, every 10 seconds we'll check. If this hampers performance at scale, increase the interval.
+  offerChange = async (offer, oldState) => {
+    console.log(
+      `[INFO] Bot ${this.details.accountName} recieved an offer update... `,
+      offer
+    );
+  };
+
   handleOffers = async offer => {
+    console.log(offer.partner);
     console.log(`[INFO] Bot ${this.details.accountName} got offer...`);
     if (offer.isGlitched()) {
       offer.decline();
@@ -185,12 +202,17 @@ export default class Bot {
     if (offer.itemsToGive.length === 0) {
       console.log(
         `[INFO] Bot ${this.details.accountName} accepting donation from ${
-          offer.partner.steamID
-        }`
+          offer.partner.steamId
+        }...`
       );
       offer.accept();
+      return;
     }
-    console.log(`[INFO] Bot ${this.details.accountName} declining offer...`);
+    console.log(
+      `[INFO] Bot ${this.details.accountName} declining offer from ${
+        offer.partner.steamId
+      }...`
+    );
     offer.decline();
   };
 }
