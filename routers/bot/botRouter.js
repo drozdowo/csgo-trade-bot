@@ -57,8 +57,13 @@ const processJson = json => {
       pos: item.pos,
       appId: item.appid,
       name: item.name,
+      icon: item.icon_url,
       marketName: item.market_name,
-      nameColor: item.name_color
+      marketPrice: item.marketPrice,
+      nameColor: item.name_color,
+      statTrak:
+        item.tags.find(tagObj => tagObj.category === "Quality")
+          .internal_name === "strange"
     });
   });
   return items;

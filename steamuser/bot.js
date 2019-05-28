@@ -131,17 +131,18 @@ export default class Bot {
 
   getMyInventory = async () => {
     return new Promise((resolve, reject) => {
-      this.tradeOffers.loadMyInventory(
-        {
-          appId: 730,
-          contextId: 2,
-          tradableOnly: false
-        },
-        (err, inv) => {
-          if (err) reject(err);
-          resolve(inv);
-        }
-      );
+      //change false to true later
+      this.tradeOffers.getInventoryContents(730, 2, false, async (err, inv) => {
+        if (err) reject(err);
+        await Promise.all(
+          inv.map(async item => {
+            inv[inv.indexOf(item)]["marketPrice"] = await this.getPriceOfItem(
+              item.market_hash_name
+            );
+          })
+        );
+        resolve(inv);
+      });
     });
   };
 
@@ -152,8 +153,15 @@ export default class Bot {
         730,
         2,
         1,
-        (err, inv, currencies) => {
+        async (err, inv, currencies) => {
           if (err) reject(err);
+          await Promise.all(
+            inv.map(async item => {
+              inv[inv.indexOf(item)]["marketPrice"] = await this.getPriceOfItem(
+                item.market_hash_name
+              );
+            })
+          );
           resolve(inv);
         }
       );
@@ -191,6 +199,20 @@ export default class Bot {
       `[INFO] Bot ${this.details.accountName} recieved an offer update... `,
       offer
     );
+  };
+
+  getPriceOfItem = async hashName => {
+    return new Promise((resolve, reject) => {
+      this.steamCommunity.getMarketItem(730, hashName, (err, item) => {
+        if (err) reject(err);
+        if (item) {
+          resolve(item.lowestPrice);
+        }
+        resolve(0);
+      });
+    }).catch(err => {
+      return 0;
+    });
   };
 
   handleOffers = async offer => {
