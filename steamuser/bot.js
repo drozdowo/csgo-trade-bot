@@ -1,12 +1,9 @@
 import SteamUser from "steam-user";
 import steamtotp from "steam-totp";
 import getSteamAPIKey from "steam-web-api-key";
-import SteamTradeOffers from "steam-tradeoffers";
-import SteamCommunity from "SteamCommunity";
+import SteamCommunity from "steamcommunity";
 import TradeOfferManager from "steam-tradeoffer-manager";
 import _ from "lodash";
-import config from "../config";
-import axios from "axios";
 
 export default class Bot {
   //Fields
