@@ -58,7 +58,12 @@ export default class Bot {
     }
 
     this.steamUser.on("error", err => {
-      console.log("ERROR logging into ", this.details.accountName, ": ", err);
+      console.log(
+        "ERROR logging into ",
+        this.details.accountName,
+        ": ",
+        err.message
+      );
       this.steamUser.logOff();
     });
 
@@ -103,7 +108,7 @@ export default class Bot {
           if (one != null) {
             console.log(
               `Error obtaining WebAPIKey for user: ${this.details.accountName}`,
-              one
+              one.message
             );
             this.steamUser.logOff();
             return;
@@ -133,7 +138,7 @@ export default class Bot {
     return new Promise((resolve, reject) => {
       //change false to true later
       this.tradeOffers.getInventoryContents(730, 2, false, async (err, inv) => {
-        if (err) reject(err);
+        if (err) reject(err.message);
         await Promise.all(
           inv.map(async item => {
             inv[inv.indexOf(item)]["marketPrice"] = await this.getPriceOfItem(
@@ -154,7 +159,7 @@ export default class Bot {
         2,
         1,
         async (err, inv, currencies) => {
-          if (err) reject(err);
+          if (err) reject(err.message);
           await Promise.all(
             inv.map(async item => {
               inv[inv.indexOf(item)]["marketPrice"] = await this.getPriceOfItem(
@@ -166,12 +171,15 @@ export default class Bot {
         }
       );
     }).catch(err => {
-      console.log(`Error retrieving CSGO Inventory for: ${steamId} ${err}`);
+      console.log(
+        `Error retrieving CSGO Inventory for: ${steamId} ${err.message}`
+      );
       return null;
     });
   };
 
   makeTradeOffer = offer => {
+    console.log(offer);
     return new Promise((resolve, reject) => {
       let tradeOffer = null;
       if (offer.token != null) {
@@ -186,11 +194,11 @@ export default class Bot {
       tradeOffer.addTheirItems(offer.itemsFromThem);
       tradeOffer.setMessage(offer.message);
       tradeOffer.send((err, status) => {
-        if (err) reject(err);
+        if (err) reject(err.message);
         resolve(status);
       });
     }).catch(err => {
-      console.log(`Error making trade offer! ${err}`);
+      console.log(`Error making trade offer! ${err.message}`);
     });
   };
 
@@ -202,21 +210,22 @@ export default class Bot {
   };
 
   getPriceOfItem = async hashName => {
+    console.log(`Getting price for ${hashName}`);
     return new Promise((resolve, reject) => {
       this.steamCommunity.getMarketItem(730, hashName, (err, item) => {
-        if (err) reject(err);
+        if (err) reject(err.message);
         if (item) {
           resolve(item.lowestPrice);
         }
         resolve(0);
       });
     }).catch(err => {
-      return 0;
+      console.log(`Error getting price for ${hashName}`, err.message);
+      return err;
     });
   };
 
   handleOffers = async offer => {
-    console.log(offer.partner);
     console.log(`[INFO] Bot ${this.details.accountName} got offer...`);
     if (offer.isGlitched()) {
       offer.decline();
@@ -224,7 +233,7 @@ export default class Bot {
     if (offer.itemsToGive.length === 0) {
       console.log(
         `[INFO] Bot ${this.details.accountName} accepting donation from ${
-          offer.partner.steamId
+          offer.partner.accountid
         }...`
       );
       offer.accept();
@@ -232,7 +241,7 @@ export default class Bot {
     }
     console.log(
       `[INFO] Bot ${this.details.accountName} declining offer from ${
-        offer.partner.steamId
+        offer.partner.accountid
       }...`
     );
     offer.decline();

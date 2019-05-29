@@ -37,6 +37,11 @@ class BotManager {
     return names;
   };
 
+  getRandomBot = () => {
+    var num = Math.floor(Math.random() * Math.floor(this.botList.length));
+    return this.botList[num];
+  };
+
   getBotByName = name => {
     return new Promise((resolve, reject) => {
       this.botList.map(bot => {
